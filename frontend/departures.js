@@ -1,7 +1,9 @@
 function onSubmit(){
     var xhttp = new XMLHttpRequest();
+
+    let postcode = document.getElementsByName("postcode")[0].value;
  
-    xhttp.open('GET', 'http://localhost:3000/departureBoards?postcode=nw51tl', true);
+    xhttp.open('GET', `http://localhost:3001/departureBoards?postcode=${postcode}`, true);
     
     xhttp.setRequestHeader('Content-Type', 'application/json');
     
@@ -21,17 +23,25 @@ function onSubmit(){
         //     <li>4 minutes: 456 to Fantasy Land</li>
         // </ul>`
 
-        let string = "<h2>Results</h2> \n"
-        for (let stop of json){
-            string += `<h3>${stop.name}</h3>`
-            string += "\n<ul>\n"
-            for (let time of stop.times){
-                string += `<li>${time}</li>`
-                string += "\n"
+        let success = json.success;
+        let string;
+        if ( success ) {
+            json = json.data;
+            string = "<h2>Results</h2> \n"
+            for (let stop of json){
+                string += `<h3>${stop.name}</h3>`
+                string += "\n<ul>\n"
+                for (let time of stop.times){
+                    string += `<li>${time}</li>`
+                    string += "\n"
+                }
+                string += "</ul>\n"
             }
-            string += "</ul>\n"
+        } else {
+            string = 
+            `<h2>Error</h2>
+            <h3>${json.message}</h3>`;
         }
-
         document.getElementById("results").innerHTML = string
 
 
