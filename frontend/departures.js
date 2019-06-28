@@ -37,6 +37,9 @@ function onSubmit(){
                 }
                 string += "</ul>\n"
             }
+            if ( string == "<h2>Results</h2> \n" ) {
+                string += "<p>No results found </p>"
+            }
         } else {
             string = 
             `<h2>Error</h2>

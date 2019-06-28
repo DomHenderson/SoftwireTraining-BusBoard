@@ -100,12 +100,10 @@ function getBusesJSONFromPostcode(postcode: string) : Promise<busesJSON> {
             return {
                 success : false,
                 data : undefined,
-                message : 'AAAAAAAA5'
+                message : 'promise request 1 (postcode) rejected'
             };
         }
     ) .catch(errorMessage => {
-        console.log('caught1');
-        readline.prompt(); 
         throw {
             success : false,
             data : undefined,
@@ -118,7 +116,7 @@ function getBusesJSONFromPostcode(postcode: string) : Promise<busesJSON> {
         {
             success : false,
             data : undefined,
-            message : 'AAAAAAA4'
+            message : 'promise request 2 (bus stops) rejected'
         } :
         error; 
     }).catch(error=>{throw error;})
@@ -127,7 +125,7 @@ function getBusesJSONFromPostcode(postcode: string) : Promise<busesJSON> {
         {
             success : false,
             data : undefined,
-            message : 'AAAAAAA3'
+            message : 'handling bus stops rejected'
         } :
         error; 
     } );
@@ -168,7 +166,7 @@ function handleStopPointsResponse(apiResponseBody) {
         return {
             success : false,
             data : undefined,
-            message : 'AAAAAA3'
+            message : 'handling individual bus stops rejected'
         };
     });
 }
