@@ -9,6 +9,7 @@ function promiseRequest(url: string){
             if ( error == null ) {
                 resolve(body);
             } else {
+                console.log(error);
                 reject(error);
             }
         });
@@ -72,23 +73,71 @@ function printBusesFromPostcode(postcode: string){
     );
 }
 
-function getBusesJSONFromPostcode(postcode: string){
-    const url = `https://api.postcodes.io/postcodes/${postcode}`
-
-    return promiseRequest( url ).then (
-        ( body: string ) => {
-            let jsonData = JSON.parse(body);
-            let longitude = jsonData.result.longitude;
-            let latitude = jsonData.result.latitude;
-            const radius = 200;
-            return `https://api.tfl.gov.uk/StopPoint?stopTypes=NaptanPublicBusCoachTram&radius=${radius}&lat=${latitude}&lon=${longitude}`;
-        }, ()=>console.log('AAAAAAAAAAAAAAAAH')
-    )
-    .then(promiseRequest, ()=>console.log('AAAAAAAAH'))
-    .then(handleStopPointsResponse, ()=>console.log('AAAAAAAAH'));
+interface busesJSON {
+    success : boolean,
+    data : any[],
+    message : any
 }
 
+function getBusesJSONFromPostcode(postcode: string) : Promise<busesJSON> {
+    const url = `https://api.postcodes.io/postcodes/${postcode}`
+
+    return promiseRequest( url )
+    .then (
+        ( body: string ) => {
+            let jsonData = JSON.parse(body);
+            let status = jsonData.status;
+            if ( status >= 200 && status < 300 ) {
+                let longitude = jsonData.result.longitude;
+                let latitude = jsonData.result.latitude;
+                const radius = 200;
+                return `https://api.tfl.gov.uk/StopPoint?stopTypes=NaptanPublicBusCoachTram&radius=${radius}&lat=${latitude}&lon=${longitude}`;
+            } else {
+                throw jsonData.error;
+            }
+        }, 
+        ()=>{
+            return {
+                success : false,
+                data : undefined,
+                message : 'AAAAAAAA5'
+            };
+        }
+    ) .catch(errorMessage => {
+        console.log('caught1');
+        readline.prompt(); 
+        throw {
+            success : false,
+            data : undefined,
+            message : errorMessage
+        }
+    })
+    .then(promiseRequest, (error) => {
+        console.log('failed');
+        throw error == undefined ?
+        {
+            success : false,
+            data : undefined,
+            message : 'AAAAAAA4'
+        } :
+        error; 
+    }).catch(error=>{throw error;})
+    .then(handleStopPointsResponse, (error) => {
+        return error == undefined ?
+        {
+            success : false,
+            data : undefined,
+            message : 'AAAAAAA3'
+        } :
+        error; 
+    } );
+}
+
+
+
 function handleStopPointsResponse(apiResponseBody) {
+    console.log('apiResponseBody');
+    console.log(apiResponseBody);
     let busStops = JSON.parse(apiResponseBody).stopPoints;
     busStops.sort((left, right) => left.distance - right.distance);
     let nearestBusStops = busStops.slice(0,2);
@@ -97,18 +146,30 @@ function handleStopPointsResponse(apiResponseBody) {
     return Promise.all(allBusPromises).then(nextBusesData => {
         //console.log(firstTwo);
         //console.log(nextBusesData);
-        let jsonData = [];
+        let jsonData = {
+            success : true,
+            message : undefined,
+            data : []
+        };
+        let data = jsonData.data;
         for ( let i in nearestBusStops ) {
             // printBusTimes(nearestBusStops[i], nextBusesData[i]);
-            jsonData.push({
+            data.push({
                 name: nearestBusStops[i].commonName,
                 times: []
             });
             for ( let bus of nextBusesData[i] ) {
-                jsonData[i].times.push(moment(bus.expectedArrival).format('HH:mm ddd'));
+                data[i].times.push(moment(bus.expectedArrival).format('HH:mm ddd'));
             }
         }
         return jsonData;
+    },
+    ()=>{
+        return {
+            success : false,
+            data : undefined,
+            message : 'AAAAAA3'
+        };
     });
 }
 
@@ -129,7 +190,7 @@ function main() {
     // );
     
     const app = express();
-    const port = 3000;
+    const port = 3001;
 
     app.use(express.static('frontend'));
 
@@ -137,7 +198,15 @@ function main() {
         let postcode = req.query.postcode;
         console.log(postcode);
         getBusesJSONFromPostcode ( postcode )
-            .then ( jsonData => res.json(jsonData), () => console.log('AAAAAH') )
+            .then ( jsonData => {
+                console.log('resolve');
+                console.log(jsonData);
+                res.json(jsonData)
+            }, jsonData =>  {
+                console.log('reject');
+                console.log(jsonData);
+                res.json(jsonData)
+            } )
     } );
 
     app.listen(port, () => console.log(`Example app listening on port ${port}!`));
