@@ -37,42 +37,6 @@ function getNextBusesAtBusStop ( id : string, count?: number ): Promise<any> {
     );
 }
 
-function printBusesFromPostcode(postcode: string){
-    const url = `https://api.postcodes.io/postcodes/${postcode}`
-
-    return promiseRequest ( url ).then (
-        ( body: string ) => {
-            let jsonData = JSON.parse(body);
-            let longitude = jsonData.result.longitude;
-            let latitude = jsonData.result.latitude;
-            const radius = 200;
-            const url = `https://api.tfl.gov.uk/StopPoint?stopTypes=NaptanPublicBusCoachTram&radius=${radius}&lat=${latitude}&lon=${longitude}`;
-            promiseRequest ( url ).then (
-                ( body: string ) => {
-                    let busStops = JSON.parse(body).stopPoints;
-                    busStops.sort((left,right)=>left.distance-right.distance);
-                    let nearestBusStops = busStops.slice(0,2);
-
-                    let allBusPromises = nearestBusStops.map((stopPointData) => getNextBusesAtBusStop(stopPointData.id, 5));
-                    Promise.all(allBusPromises).then(nextBusesData => {
-                        //console.log(firstTwo);
-                        //console.log(nextBusesData);
-                        for ( let i in nearestBusStops ) {
-                            printBusTimes(nearestBusStops[i], nextBusesData[i]);
-                        }
-                    });
-                },
-                ( error: string ) => {
-                    console.log(error);
-                }
-            )
-        },
-        ( error: string ) => {
-            console.log(error);
-        }
-    );
-}
-
 interface busesJSON {
     success : boolean,
     data : any[],
@@ -133,7 +97,7 @@ function getBusesJSONFromPostcode(postcode: string) : Promise<busesJSON> {
 
 
 
-function handleStopPointsResponse(apiResponseBody) {
+function handleStopPointsResponse(apiResponseBody) : Promise<busesJSON> {
     console.log('apiResponseBody');
     console.log(apiResponseBody);
     let busStops = JSON.parse(apiResponseBody).stopPoints;
