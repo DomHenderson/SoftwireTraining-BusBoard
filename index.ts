@@ -134,7 +134,8 @@ function main() {
     app.get('/departureBoards', (req, res) => {
         let postcode = req.query.postcode;
         console.log(postcode);
-        getBusesJSONFromPostcode ( postcode ).then ( res.json, ()=>console.log('AAAAAH') );
+        getBusesJSONFromPostcode ( postcode )
+            .then ( jsonData => res.json(jsonData), () => console.log('AAAAAH') )
     } );
 
     app.listen(port, () => console.log(`Example app listening on port ${port}!`));
