@@ -131,6 +131,8 @@ function main() {
     const app = express();
     const port = 3000;
 
+    app.use(express.static('frontend'));
+
     app.get('/departureBoards', (req, res) => {
         let postcode = req.query.postcode;
         console.log(postcode);
